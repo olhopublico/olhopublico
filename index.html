@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesquisa · Congresso Nacional</title>
+<style>
+/* ============================================================
+   1. RESET E VARIÁVEIS GLOBAIS
+   Cores neutras e claras, tipografia acolhedora
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cor-fundo: #eef3f8;              /* fundo geral azul claro */
+  --cor-superficie: #ffffff;         /* cards e painéis */
+  --cor-borda: #d4dfeb;              /* bordas suaves em azul */
+  --cor-texto: #1f2d3d;              /* texto principal azul-escuro */
+  --cor-texto-suave: #5a6b7d;        /* texto secundário */
+  --cor-destaque: #3b6fa8;           /* azul do destaque (código do chat) */
+  --cor-destaque-escuro: #2c5580;    /* azul mais profundo */
+  --cor-hover: #e1ebf5;              /* hover suave */
+  --sombra: 0 1px 3px rgba(31,45,61,.06), 0 4px 12px rgba(31,45,61,.04);
+  --raio: 10px;
+  --fonte: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html { font-size: 16px; }
+body {
+  font-family: var(--fonte);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   2. CABEÇALHO (2 linhas)
+   ============================================================ */
+.cabecalho {
+  background: var(--cor-superficie);
+  border-bottom: 1px solid var(--cor-borda);
+  padding: 1.5rem 1rem 1.2rem;
+  text-align: center;
+}
+.cabecalho__titulo {
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--cor-destaque-escuro);
+}
+.cabecalho__subtitulo {
+  font-size: clamp(.8rem, 2.5vw, 1rem);
+  color: var(--cor-texto-suave);
+  font-style: italic;
+  margin-top: .25rem;
+}
+
+/* ============================================================
+   3. MENU EM ABAS
+   ============================================================ */
+.menu-abas {
+  display: flex;
+  background: var(--cor-superficie);
+  border-bottom: 1px solid var(--cor-borda);
+  padding: 0 1rem;
+  gap: .25rem;
+  overflow-x: auto;
+}
+.menu-abas__botao {
+  background: none; border: none;
+  padding: 1rem 1.2rem;
+  font-size: .95rem; font-family: inherit;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.menu-abas__botao:hover { background: var(--cor-hover); color: var(--cor-texto); }
+.menu-abas__botao--ativo {
+  color: var(--cor-destaque-escuro);
+  border-bottom-color: var(--cor-destaque);
+  font-weight: 600;
+}
+
+/* ============================================================
+   4. CONTEÚDO E PAINÉIS
+   ============================================================ */
+.conteudo {
+  flex: 1;
+  max-width: 1400px; width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+}
+.painel { display: none; }
+.painel--ativo { display: block; }
+
+.bloco {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.bloco__titulo {
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--cor-destaque);
+  font-weight: 600;
+  margin-bottom: .9rem;
+}
+
+/* ============================================================
+   5. ÁREA DE FILTRO
+   ============================================================ */
+.filtro-grid {
+  display: flex; flex-wrap: wrap;
+  gap: .75rem; align-items: flex-end;
+}
+.campo {
+  display: flex; flex-direction: column;
+  gap: .3rem;
+  flex: 1 1 140px; min-width: 120px;
+}
+.campo--largo { flex: 2 1 200px; }
+.campo label {
+  font-size: .78rem;
+  color: var(--cor-texto-suave);
+  font-weight: 500;
+}
+.campo input[type="text"],
+.campo select {
+  padding: .55rem .65rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: var(--cor-fundo);
+  font-family: inherit;
+  font-size: .9rem;
+  color: var(--cor-texto);
+  transition: border-color .2s, box-shadow .2s;
+}
+.campo input[type="text"]:focus,
+.campo select:focus {
+  outline: none;
+  border-color: var(--cor-destaque);
+  box-shadow: 0 0 0 3px rgba(59,111,168,.15);  /* antes era rgba(138,124,106,.15) */
+  background: #fff;
+}
+.campo select[multiple] { min-height: 2.6rem; }
+
+.campo--checkbox {
+  flex: 0 0 auto;
+  flex-direction: row; align-items: center;
+  gap: .45rem; padding-bottom: .55rem;
+  white-space: nowrap;
+}
+.campo--checkbox input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--cor-destaque);
+  cursor: pointer;
+}
+.campo--checkbox label {
+  font-size: .82rem;
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+
+.filtro-acoes {
+  margin-top: .6rem;
+  display: flex; justify-content: flex-end;
+}
+.btn-limpar {
+  background: none; border: none;
+  color: var(--cor-texto-suave);
+  font-size: .75rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: .2rem .3rem;
+  transition: color .2s;
+}
+.btn-limpar:hover { color: var(--cor-destaque-escuro); }
+
+/* ============================================================
+   6. ÁREA DE AGREGAÇÃO
+   ============================================================ */
+.agregacao-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 700px) { .agregacao-grid { grid-template-columns: 1fr; } }
+
+.agregacao-campo { display: flex; flex-direction: column; gap: .5rem; }
+.agregacao-campo__header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .5rem; flex-wrap: wrap;
+}
+.agregacao-campo__titulo {
+  font-size: .85rem; font-weight: 600; color: var(--cor-texto);
+}
+.radios-arroba {
+  display: flex; gap: .6rem; flex-wrap: wrap;
+  font-size: .78rem; color: var(--cor-texto-suave);
+}
+.radios-arroba label { display: flex; align-items: center; gap: .3rem; cursor: pointer; }
+.radios-arroba input[type="radio"] { accent-color: var(--cor-destaque); cursor: pointer; }
+
+.agregacao-campo textarea {
+  width: 100%; min-height: 90px; resize: vertical;
+  padding: .6rem .7rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: var(--cor-fundo);
+  font-family: 'Consolas', 'Menlo', monospace;
+  font-size: .78rem; line-height: 1.45;
+  color: var(--cor-texto);
+}
+.agregacao-campo textarea:focus {
+  outline: none;
+  border-color: var(--cor-destaque);
+  box-shadow: 0 0 0 3px rgba(138,124,106,.15);
+}
+.btn-copiar {
+  align-self: flex-start;
+  background: var(--cor-hover);
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  padding: .35rem .75rem;
+  font-size: .75rem; font-family: inherit;
+  color: var(--cor-destaque-escuro);
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.btn-copiar:hover { background: #e8e2d9; border-color: var(--cor-destaque); }
+.btn-copiar--copiado { background: #d9e8d9; border-color: #8aab8a; color: #4a6b4a; }
+
+/* ============================================================
+   7. ÁREA DE RESULTADO
+   ============================================================ */
+.resultado-barra {
+  display: flex; flex-wrap: wrap;
+  align-items: center; justify-content: space-between;
+  gap: .75rem; margin-bottom: .75rem;
+}
+.resultado-contagem { font-size: .82rem; color: var(--cor-texto-suave); }
+.resultado-contagem strong { color: var(--cor-destaque-escuro); }
+.resultado-acoes { display: flex; gap: .5rem; flex-wrap: wrap; }
+.btn-exportar {
+  background: var(--cor-destaque); color: #fff;
+  border: none; border-radius: 6px;
+  padding: .45rem .9rem;
+  font-size: .78rem; font-family: inherit;
+  cursor: pointer;
+  transition: background .2s;
+}
+.btn-exportar:hover { background: var(--cor-destaque-escuro); }
+
+.tabela-envelope {
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--cor-superficie);
+}
+.tabela-scroll-topo,
+.tabela-scroll-fundo { overflow-x: auto; overflow-y: hidden; }
+.tabela-scroll-topo { height: 12px; }
+.tabela-scroll-topo::-webkit-scrollbar,
+.tabela-scroll-fundo::-webkit-scrollbar { height: 10px; }
+.tabela-scroll-topo::-webkit-scrollbar-thumb,
+.tabela-scroll-fundo::-webkit-scrollbar-thumb { background: #cfc7bb; border-radius: 5px; }
+.tabela-inner { min-width: 100%; }
+
+table.tabela-resultado {
+  border-collapse: collapse;
+  width: 100%; min-width: 1400px;
+  font-size: .8rem;
+}
+table.tabela-resultado thead th {
+  background: var(--cor-fundo);
+  color: var(--cor-destaque-escuro);
+  font-weight: 600; text-align: left;
+  padding: .6rem .7rem;
+  border-bottom: 1px solid var(--cor-borda);
+  position: relative; white-space: nowrap;
+  user-select: none;
+}
+.col-resize {
+  position: absolute; top: 0; right: 0;
+  width: 6px; height: 100%;
+  cursor: col-resize;
+}
+.col-resize:hover { background: rgba(138,124,106,.25); }
+table.tabela-resultado tbody td {
+  padding: .55rem .7rem;
+  border-bottom: 1px solid #f1ede6;
+  color: var(--cor-texto);
+  vertical-align: top;
+  word-break: break-word;
+}
+table.tabela-resultado tbody tr:nth-child(even) { background: #fbfaf8; }
+table.tabela-resultado tbody tr:hover { background: var(--cor-hover); }
+table.tabela-resultado a { color: var(--cor-destaque-escuro); text-decoration: none; }
+table.tabela-resultado a:hover { text-decoration: underline; }
+.tabela-vazia {
+  text-align: center; padding: 2rem 1rem;
+  color: var(--cor-texto-suave); font-size: .85rem;
+}
+
+/* ============================================================
+   8. RODAPÉ
+   ============================================================ */
+.rodape {
+  background: var(--cor-superficie);
+  border-top: 1px solid var(--cor-borda);
+  padding: 1rem;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 1rem; flex-wrap: wrap;
+  font-size: .72rem; color: var(--cor-texto-suave); line-height: 1.6;
+}
+.rodape__legenda { max-width: 60%; }
+.rodape__construcao { text-align: right; font-style: italic; }
+@media (max-width: 600px) {
+  .rodape { flex-direction: column; }
+  .rodape__legenda, .rodape__construcao { max-width: 100%; text-align: left; }
+}
+
+/* ============================================================
+   9. RESPONSIVIDADE EXTRA
+   ============================================================ */
+@media (max-width: 600px) {
+  .conteudo { padding: 1rem .6rem 1.5rem; }
+  .bloco { padding: .9rem; }
+  .filtro-grid { gap: .6rem; }
+  .campo, .campo--largo { flex: 1 1 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     CABEÇALHO
+     ============================================================ -->
+<header class="cabecalho">
+  <h1 class="cabecalho__titulo">Pesquisa · Congresso Nacional</h1>
+  <p class="cabecalho__subtitulo">E aí, já cobrou o congresso hoje?</p>
+</header>
+
+<!-- ============================================================
+     MENU EM ABAS
+     ============================================================ -->
+<nav class="menu-abas" role="tablist" aria-label="Navegação principal">
+  <button class="menu-abas__botao menu-abas__botao--ativo"
+          role="tab" aria-selected="true" data-aba="deputados">
+    Câmara dos Deputados
+  </button>
+  <button class="menu-abas__botao"
+          role="tab" aria-selected="false" data-aba="senadores">
+    Senado
+  </button>
+</nav>
+
+<!-- ============================================================
+     CONTEÚDO
+     ============================================================ -->
+<main class="conteudo">
+
+  <!-- Painel: DEPUTADOS -->
+  <section class="painel painel--ativo" id="painel-deputados" role="tabpanel">
+    <div class="bloco">
+      <h2 class="bloco__titulo">Faça sua pesquisa</h2>
+      <div class="filtro-grid">
+        <div class="campo campo--largo">
+          <label for="f-nome-dep">Nome</label>
+          <input type="text" id="f-nome-dep" data-filtro="nome" placeholder="Digite um nome...">
+        </div>
+        <div class="campo">
+          <label for="f-partido-dep">Partido</label>
+          <select id="f-partido-dep" data-filtro="partido" multiple size="1"></select>
+        </div>
+        <div class="campo">
+          <label for="f-estado-dep">Estado</label>
+          <select id="f-estado-dep" data-filtro="estado"><option value="">Todos</option></select>
+        </div>
+        <div class="campo">
+          <label for="f-rede-dep">Rede social</label>
+          <select id="f-rede-dep" data-filtro="rede">
+            <option value="">Todas</option>
+            <option value="instagram">Instagram</option>
+            <option value="facebook">Facebook</option>
+            <option value="tiktok">Tiktok</option>
+            <option value="whatsapp">Whatsapp</option>
+            <option value="site">Site</option>
+          </select>
+        </div>
+        <div class="campo campo--checkbox">
+          <input type="checkbox" id="f-mandato-dep" data-filtro="mandato2026">
+          <label for="f-mandato-dep">Possui mandato em 2026</label>
+        </div>
+      </div>
+      <div class="filtro-acoes">
+        <button class="btn-limpar" data-limpar="deputados">Limpar filtros</button>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <div class="agregacao-grid">
+        <div class="agregacao-campo">
+          <div class="agregacao-campo__header">
+            <span class="agregacao-campo__titulo">Usuários</span>
+            <div class="radios-arroba">
+              <label><input type="radio" name="rede-arroba-dep" value="instagram" checked> Instagram</label>
+              <label><input type="radio" name="rede-arroba-dep" value="x"> X</label>
+              <label><input type="radio" name="rede-arroba-dep" value="facebook"> Facebook</label>
+              <label><input type="radio" name="rede-arroba-dep" value="tiktok"> Tiktok</label>
+            </div>
+          </div>
+          <textarea id="saida-arroba-dep" readonly placeholder="Selecione uma rede social..."></textarea>
+          <button class="btn-copiar" data-copiar="saida-arroba-dep">Copiar usuários</button>
+        </div>
+        <div class="agregacao-campo">
+          <div class="agregacao-campo__header">
+            <span class="agregacao-campo__titulo">E-mails</span>
+          </div>
+          <textarea id="saida-email-dep" readonly placeholder="Os e-mails do resultado aparecerão aqui..."></textarea>
+          <button class="btn-copiar" data-copiar="saida-email-dep">Copiar e-mails</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <div class="resultado-barra">
+        <span class="resultado-contagem" id="contagem-dep">0 de 0</span>
+        <div class="resultado-acoes">
+          <button class="btn-exportar" data-exportar="csv" data-aba-export="deputados">Exportar CSV</button>
+          <button class="btn-exportar" data-exportar="pdf" data-aba-export="deputados">Exportar PDF</button>
+        </div>
+      </div>
+      <div class="tabela-envelope">
+        <div class="tabela-scroll-topo" id="scroll-topo-dep"><div class="tabela-inner" id="scroll-topo-inner-dep"></div></div>
+        <div class="tabela-scroll-fundo" id="scroll-fundo-dep">
+          <table class="tabela-resultado" id="tabela-dep">
+            <thead><tr>
+              <th>Nome<span class="col-resize"></span></th>
+              <th>Partido<span class="col-resize"></span></th>
+              <th>Estado<span class="col-resize"></span></th>
+              <th>Situação<span class="col-resize"></span></th>
+              <th>Instagram<span class="col-resize"></span></th>
+              <th>X<span class="col-resize"></span></th>
+              <th>Facebook<span class="col-resize"></span></th>
+              <th>Tiktok<span class="col-resize"></span></th>
+              <th>Whatsapp<span class="col-resize"></span></th>
+              <th>Site<span class="col-resize"></span></th>
+              <th>Telefone de Gabinete (DDD 61)<span class="col-resize"></span></th>
+              <th>E-mail<span class="col-resize"></span></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Painel: SENADORES -->
+  <section class="painel" id="painel-senadores" role="tabpanel">
+    <div class="bloco">
+      <h2 class="bloco__titulo">Faça sua pesquisa</h2>
+      <div class="filtro-grid">
+        <div class="campo campo--largo">
+          <label for="f-nome-sen">Nome</label>
+          <input type="text" id="f-nome-sen" data-filtro="nome" placeholder="Digite um nome...">
+        </div>
+        <div class="campo">
+          <label for="f-partido-sen">Partido</label>
+          <select id="f-partido-sen" data-filtro="partido" multiple size="1"></select>
+        </div>
+        <div class="campo">
+          <label for="f-estado-sen">Estado</label>
+          <select id="f-estado-sen" data-filtro="estado"><option value="">Todos</option></select>
+        </div>
+        <div class="campo">
+          <label for="f-rede-sen">Rede social</label>
+          <select id="f-rede-sen" data-filtro="rede">
+            <option value="">Todas</option>
+            <option value="instagram">Instagram</option>
+            <option value="facebook">Facebook</option>
+            <option value="tiktok">Tiktok</option>
+            <option value="whatsapp">Whatsapp</option>
+            <option value="site">Site</option>
+          </select>
+        </div>
+        <div class="campo campo--checkbox">
+          <input type="checkbox" id="f-mandato-sen" data-filtro="mandato2026">
+          <label for="f-mandato-sen">Possui mandato 2026</label>
+        </div>
+      </div>
+      <div class="filtro-acoes">
+        <button class="btn-limpar" data-limpar="senadores">Limpar filtros</button>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <div class="agregacao-grid">
+        <div class="agregacao-campo">
+          <div class="agregacao-campo__header">
+            <span class="agregacao-campo__titulo">Usuários</span>
+            <div class="radios-arroba">
+              <label><input type="radio" name="rede-arroba-sen" value="instagram" checked> Instagram</label>
+              <label><input type="radio" name="rede-arroba-sen" value="x"> X</label>
+              <label><input type="radio" name="rede-arroba-sen" value="facebook"> Facebook</label>
+              <label><input type="radio" name="rede-arroba-sen" value="tiktok"> Tiktok</label>
+            </div>
+          </div>
+          <textarea id="saida-arroba-sen" readonly placeholder="Selecione uma rede social..."></textarea>
+          <button class="btn-copiar" data-copiar="saida-arroba-sen">Copiar usuários</button>
+        </div>
+        <div class="agregacao-campo">
+          <div class="agregacao-campo__header">
+            <span class="agregacao-campo__titulo">E-mails</span>
+          </div>
+          <textarea id="saida-email-sen" readonly placeholder="Os e-mails do resultado aparecerão aqui..."></textarea>
+          <button class="btn-copiar" data-copiar="saida-email-sen">Copiar e-mails</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <div class="resultado-barra">
+        <span class="resultado-contagem" id="contagem-sen">0 de 0</span>
+        <div class="resultado-acoes">
+          <button class="btn-exportar" data-exportar="csv" data-aba-export="senadores">Exportar CSV</button>
+          <button class="btn-exportar" data-exportar="pdf" data-aba-export="senadores">Exportar PDF</button>
+        </div>
+      </div>
+      <div class="tabela-envelope">
+        <div class="tabela-scroll-topo" id="scroll-topo-sen"><div class="tabela-inner" id="scroll-topo-inner-sen"></div></div>
+        <div class="tabela-scroll-fundo" id="scroll-fundo-sen">
+          <table class="tabela-resultado" id="tabela-sen">
+            <thead><tr>
+              <th>Nome<span class="col-resize"></span></th>
+              <th>Partido<span class="col-resize"></span></th>
+              <th>Estado<span class="col-resize"></span></th>
+              <th>Situação<span class="col-resize"></span></th>
+              <th>Instagram<span class="col-resize"></span></th>
+              <th>X<span class="col-resize"></span></th>
+              <th>Facebook<span class="col-resize"></span></th>
+              <th>Tiktok<span class="col-resize"></span></th>
+              <th>Whatsapp<span class="col-resize"></span></th>
+              <th>Site<span class="col-resize"></span></th>
+              <th>Telefone de Gabinete (DDD 61)<span class="col-resize"></span></th>
+              <th>E-mail<span class="col-resize"></span></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="rodape">
+  <div class="rodape__legenda">
+    <strong>Legenda:</strong><br>
+    * Suplente. Assume mandato em 2027<br>
+    ** Aguardando decisão do TSE<br><br>
+	
+	Plataforma de consulta a dados públicos de parlamentares, voltada ao fortalecimento da participação popular.<br>
+	
+	
+  </div>
+  <div class="rodape__construcao">
+    Site em construção. Novidades em breve
+  </div>
+</footer>
+
+<!-- Dados externos -->
+<script src="dados/DeputadoFederal.js"></script>
+<script src="dados/Senador.js"></script>
+
+<script>
+
+/* ================================================================
+   BLOCO 2: UTILITÁRIOS
+   ================================================================ */
+function normalizar(s) {
+  return (s || '').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+function esc(s) {
+  return (s == null ? '' : String(s))
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function linkOuTexto(url, rotulo) {
+  if (!url) return '';
+  const rotuloFinal = rotulo || url;
+  if (/^https?:\/\//i.test(url)) {
+    return `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(rotuloFinal)}</a>`;
+  }
+  return esc(rotuloFinal);
+}
+function extrairArrobaTiktok(url) {
+  if (!url) return '';
+  const m = url.match(/@([A-Za-z0-9._]+)/);
+  return m ? '@' + m[1] : '';
+}
+async function copiarTexto(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  try { await navigator.clipboard.writeText(el.value); }
+  catch (e) { el.select(); document.execCommand('copy'); }
+  const btn = document.querySelector(`[data-copiar="${id}"]`);
+  if (btn) {
+    const original = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('btn-copiar--copiado');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('btn-copiar--copiado'); }, 1500);
+  }
+}
+function baixarCSV(dados) {
+  if (!dados.length) return alert('Nada para exportar.');
+  const colunas = Object.keys(dados[0]);
+  let csv = '\uFEFF' + colunas.join(';') + '\n';
+  dados.forEach(linha => {
+    csv += colunas.map(c => {
+      let v = (linha[c] == null ? '' : String(linha[c]));
+      if (v.includes(';') || v.includes('"') || v.includes('\n')) v = '"' + v.replace(/"/g, '""') + '"';
+      return v;
+    }).join(';') + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'congresso_resultado.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportarPDF(dados) {
+  if (!dados.length) return alert('Nada para exportar.');
+  const colunas = Object.keys(dados[0]);
+  const win = window.open('', '_blank');
+  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Resultado Congresso Nacional</title><style>body{font-family:Arial,sans-serif;font-size:10px;padding:10px}h1{font-size:14px;margin-bottom:8px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:3px 4px;text-align:left;vertical-align:top}th{background:#eee}</style></head><body><h1>Pesquisa · Congresso Nacional</h1><table><thead><tr>`;
+  colunas.forEach(c => html += `<th>${esc(c)}</th>`);
+  html += '</tr></thead><tbody>';
+  dados.forEach(linha => {
+    html += '<tr>';
+    colunas.forEach(c => html += `<td>${esc(linha[c])}</td>`);
+    html += '</tr>';
+  });
+  html += '</tbody></table></body></html>';
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+}
+
+/* ================================================================
+   BLOCO 3: ESTADO E LÓGICA
+   ================================================================ */
+const estado = {
+  deputados: { nome: '', partido: [], estado: '', rede: '', mandato2026: false, redeArroba: 'instagram' },
+  senadores: { nome: '', partido: [], estado: '', rede: '', mandato2026: false, redeArroba: 'instagram' }
+};
+
+function popularPartidos(select, dados) {
+  const partidos = [...new Set(dados.map(d => d.partido).filter(Boolean))].sort();
+  select.innerHTML = partidos.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+}
+function popularEstados(select, dados) {
+  const ufs = [...new Set(dados.map(d => d.estado).filter(Boolean))].sort();
+  select.innerHTML = '<option value="">Todos</option>' + ufs.map(uf => `<option value="${esc(uf)}">${esc(uf)}</option>`).join('');
+}
+function filtrar(aba) {
+  const dados = aba === 'deputados' ? DADOS_DEPUTADOS : DADOS_SENADORES;
+  const f = estado[aba];
+  return dados.filter(d => {
+    if (f.nome && !normalizar(d.nome).includes(normalizar(f.nome))) return false;
+    if (f.partido.length && !f.partido.includes(d.partido)) return false;
+    if (f.estado && d.estado !== f.estado) return false;
+    if (f.rede) {
+      const mapa = { instagram: d.instagram, facebook: d.facebook, tiktok: d.tiktok, whatsapp: d.whatsapp, site: d.site };
+      if (!mapa[f.rede]) return false;
+    }
+    // Exclui APENAS "Eleito(a)" — preserva Reeleito(a), Meio de Mandato, Suplente*, etc.
+if (f.mandato2026 && normalizar(d.situacao) === 'eleito(a)') return false;
+    return true;
+  });
+}
+function renderizarTabela(aba) {
+  const linhas = filtrar(aba);
+  const suf = aba === 'deputados' ? 'dep' : 'sen';
+  const tbody = document.querySelector(`#tabela-${suf} tbody`);
+  const contagem = document.getElementById(`contagem-${suf}`);
+  const total = (aba === 'deputados' ? DADOS_DEPUTADOS : DADOS_SENADORES).length;
+
+  contagem.innerHTML = `<strong>${linhas.length}</strong> de ${total}`;
+
+  if (!linhas.length) {
+    tbody.innerHTML = `<tr><td colspan="12" class="tabela-vazia">Nenhum parlamentar encontrado com os filtros atuais.</td></tr>`;
+  } else {
+    tbody.innerHTML = linhas.map(d => `
+      <tr>
+        <td>${esc(d.nome)}</td>
+        <td>${esc(d.partido)}</td>
+        <td>${esc(d.estado)}</td>
+        <td>${esc(d.situacao)}</td>
+        <td>${linkOuTexto(d.instagram, d.instagramArroba || d.instagram)}</td>
+        <td>${linkOuTexto(d.x, d.xArroba || d.x)}</td>
+        <td>${linkOuTexto(d.facebook, d.facebookArroba || d.facebook)}</td>
+        <td>${linkOuTexto(d.tiktok, extrairArrobaTiktok(d.tiktok))}</td>
+        <td>${esc(d.whatsapp)}</td>
+        <td>${linkOuTexto(d.site, d.site)}</td>
+        <td>${esc(d.telefone)}</td>
+        <td>${esc(d.email)}</td>
+      </tr>`).join('');
+  }
+  atualizarAgregados(aba, linhas);
+  sincronizarScroll(aba);
+}
+function atualizarAgregados(aba, linhas) {
+  const suf = aba === 'deputados' ? 'dep' : 'sen';
+  const rede = estado[aba].redeArroba;
+  const mapa = { instagram: 'instagramArroba', x: 'xArroba', facebook: 'facebookArroba', tiktok: null };
+  let arrobas = [];
+  if (rede === 'tiktok') arrobas = linhas.map(d => extrairArrobaTiktok(d.tiktok)).filter(Boolean);
+  else arrobas = linhas.map(d => d[mapa[rede]]).filter(Boolean);
+  arrobas = [...new Set(arrobas)].sort();
+  document.getElementById(`saida-arroba-${suf}`).value = arrobas.join(' ');
+  const emails = [...new Set(linhas.map(d => d.email).filter(Boolean))].sort();
+  document.getElementById(`saida-email-${suf}`).value = emails.join('; ');
+}
+function sincronizarScroll(aba) {
+  const suf = aba === 'deputados' ? 'dep' : 'sen';
+  const topo = document.getElementById(`scroll-topo-${suf}`);
+  const fundo = document.getElementById(`scroll-fundo-${suf}`);
+  const inner = document.getElementById(`scroll-topo-inner-${suf}`);
+  if (!topo || !fundo || !inner) return;
+  inner.style.width = fundo.scrollWidth + 'px';
+  topo.onscroll = () => { fundo.scrollLeft = topo.scrollLeft; };
+  fundo.onscroll = () => { topo.scrollLeft = fundo.scrollLeft; };
+}
+function ligarFiltros(aba) {
+  const suf = aba === 'deputados' ? 'dep' : 'sen';
+  const painel = document.getElementById(`painel-${aba}`);
+  painel.querySelector(`#f-nome-${suf}`).addEventListener('input', e => { estado[aba].nome = e.target.value; renderizarTabela(aba); });
+  const selPartido = painel.querySelector(`#f-partido-${suf}`);
+  selPartido.addEventListener('change', () => { estado[aba].partido = [...selPartido.selectedOptions].map(o => o.value); renderizarTabela(aba); });
+  painel.querySelector(`#f-estado-${suf}`).addEventListener('change', e => { estado[aba].estado = e.target.value; renderizarTabela(aba); });
+  painel.querySelector(`#f-rede-${suf}`).addEventListener('change', e => { estado[aba].rede = e.target.value; renderizarTabela(aba); });
+  painel.querySelector(`#f-mandato-${suf}`).addEventListener('change', e => { estado[aba].mandato2026 = e.target.checked; renderizarTabela(aba); });
+  painel.querySelectorAll(`input[name="rede-arroba-${suf}"]`).forEach(radio => {
+    radio.addEventListener('change', e => { estado[aba].redeArroba = e.target.value; renderizarTabela(aba); });
+  });
+  painel.querySelector(`[data-limpar="${aba}"]`).addEventListener('click', () => {
+    estado[aba] = { nome: '', partido: [], estado: '', rede: '', mandato2026: false, redeArroba: 'instagram' };
+    painel.querySelector(`#f-nome-${suf}`).value = '';
+    selPartido.selectedIndex = -1;
+    painel.querySelector(`#f-estado-${suf}`).value = '';
+    painel.querySelector(`#f-rede-${suf}`).value = '';
+    painel.querySelector(`#f-mandato-${suf}`).checked = false;
+    painel.querySelector(`input[name="rede-arroba-${suf}"][value="instagram"]`).checked = true;
+    renderizarTabela(aba);
+  });
+  painel.querySelectorAll('.btn-copiar').forEach(btn => btn.addEventListener('click', () => copiarTexto(btn.dataset.copiar)));
+  painel.querySelectorAll('[data-exportar]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const linhas = filtrar(aba);
+      if (btn.dataset.exportar === 'csv') baixarCSV(linhas); else exportarPDF(linhas);
+    });
+  });
+}
+function ligarResizeColunas(aba) {
+  const suf = aba === 'deputados' ? 'dep' : 'sen';
+  const tabela = document.getElementById(`tabela-${suf}`);
+  tabela.querySelectorAll('.col-resize').forEach(handle => {
+    let th, startX, startW;
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      th = handle.parentElement;
+      startX = e.pageX; startW = th.offsetWidth;
+      const onMove = ev => {
+        const w = Math.max(60, startW + (ev.pageX - startX));
+        th.style.width = w + 'px'; th.style.minWidth = w + 'px';
+        sincronizarScroll(aba);
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+}
+
+/* ================================================================
+   BLOCO 4: INICIALIZAÇÃO
+   ================================================================ */
+function inicializar() {
+  popularPartidos(document.getElementById('f-partido-dep'), DADOS_DEPUTADOS);
+  popularPartidos(document.getElementById('f-partido-sen'), DADOS_SENADORES);
+  popularEstados(document.getElementById('f-estado-dep'), DADOS_DEPUTADOS);
+  popularEstados(document.getElementById('f-estado-sen'), DADOS_SENADORES);
+  ligarFiltros('deputados');
+  ligarFiltros('senadores');
+  renderizarTabela('deputados');
+  renderizarTabela('senadores');
+  ligarResizeColunas('deputados');
+  ligarResizeColunas('senadores');
+  document.querySelectorAll('.menu-abas__botao').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.menu-abas__botao').forEach(b => {
+        b.classList.remove('menu-abas__botao--ativo');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('menu-abas__botao--ativo');
+      btn.setAttribute('aria-selected', 'true');
+      document.querySelectorAll('.painel').forEach(p => p.classList.remove('painel--ativo'));
+      document.getElementById('painel-' + btn.dataset.aba).classList.add('painel--ativo');
+      renderizarTabela(btn.dataset.aba);
+    });
+  });
+  window.addEventListener('resize', () => {
+    sincronizarScroll('deputados');
+    sincronizarScroll('senadores');
+  });
+  console.log('Deputados carregados:', DADOS_DEPUTADOS.length);
+  console.log('Senadores carregados:', DADOS_SENADORES.length);
+}
+document.addEventListener('DOMContentLoaded', inicializar);
+</script>
+</body>
+</html>
